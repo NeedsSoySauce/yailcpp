@@ -20,7 +20,6 @@ namespace RunButLikeActually
     const int GAME_SPEED = 50;
     const int GAME_TILE_ROWS = 32;
     const int GAME_TILE_COLS = 80;
-    const int GAME_INIT_RUNUP_DISTANCE = 64;
     const int GAME_PLAYER_POSITION = 20;
 
     // Player jump settings. Height and distance should be odd and greater than 3.
@@ -32,8 +31,9 @@ namespace RunButLikeActually
     // Obstacles
     const int MIN_OBSTACLE_HEIGHT = 1;
     const int MAX_OBSTACLE_HEIGHT = PLAYER_JUMP_HEIGHT - 1;
-    const int MIN_OBSTACLE_GAP = 8;
-    const int MAX_OBSTACLE_GAP = 20;
+    const int MIN_OBSTACLE_GAP = 11;
+    const int MAX_OBSTACLE_GAP = 80;
+    const int OBSTACLE_CREATION_CHANCE = 25;
 
     // Symbols
     const char EMPTY_SYMBOL = ' ';
@@ -91,6 +91,7 @@ namespace RunButLikeActually
 
                 UpdatePlayerPosition();
                 UpdateTiles();
+                UpdateObstacles();
 
                 // Check for collisions
 
@@ -197,6 +198,32 @@ namespace RunButLikeActually
             {
                 jumpStepCount = 0;
                 isJumping = false;
+            }
+        }
+
+        bool ObstacleSpawnAvailable()
+        {
+            if (lastObstacleDist > MAX_OBSTACLE_GAP)
+                return true;
+            return lastObstacleDist > MIN_OBSTACLE_GAP && RandRange(0, 101) < OBSTACLE_CREATION_CHANCE;
+        }
+
+        void UpdateObstacles()
+        {
+            if (ObstacleSpawnAvailable())
+            {
+                int height = RandRange(MIN_OBSTACLE_HEIGHT, MAX_OBSTACLE_HEIGHT + 1);
+
+                for (int i = GAME_TILE_ROWS - 1; i >= GAME_TILE_ROWS - 1 - height; i--)
+                {
+                    tiles[i][GAME_TILE_COLS - 1] = Tile::Obstacle;
+                }
+
+                lastObstacleDist = 0;
+            }
+            else
+            {
+                lastObstacleDist++;
             }
         }
 
