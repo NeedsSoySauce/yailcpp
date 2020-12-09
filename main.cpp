@@ -8,21 +8,26 @@
 #include <chrono>
 #include <thread>
 #include <rlutil.h>
+#include <atomic>
+
+#define DEBUG true
 
 using namespace std;
 
 namespace RunButLikeActually
 {
     // Game
-    const int GAME_SPEED = 100;
+    const int GAME_SPEED = 50;
     const int GAME_TILE_ROWS = 32;
     const int GAME_TILE_COLS = 80;
     const int GAME_INIT_RUNUP_DISTANCE = 64;
     const int GAME_PLAYER_POSITION = 20;
 
-    // Player
-    const int PLAYER_JUMP_DISTANCE = 5;
+    // Player jump settings. Height and distance should be odd and greater than 3.
+    const int PLAYER_JUMP_DISTANCE = 11;
     const int PLAYER_JUMP_HEIGHT = 5;
+    const int PLAYER_JUMP_STEPS = PLAYER_JUMP_DISTANCE / 2; // Intentional integer division
+    const float PLAYER_JUMP_STEP_SIZE = (float)PLAYER_JUMP_HEIGHT / PLAYER_JUMP_STEPS;
 
     // Obstacles
     const int MIN_OBSTACLE_HEIGHT = 1;
@@ -59,29 +64,32 @@ namespace RunButLikeActually
     class Game
     {
     public:
-        bool isRunning = false;
         Game()
         {
             playerSymbol = PLAYER_SYMBOLS[playerSymbolIndex];
             tiles[GAME_TILE_ROWS - 2][GAME_PLAYER_POSITION] = Tile::Player;
             tiles[GAME_TILE_ROWS - 1].fill(Tile::Wall);
+
+            isGameRunning = false;
+            isJumping = false;
         }
 
         void Run()
         {
-            if (isRunning)
+            if (isGameRunning)
                 throw "We're already running.";
 
-            isRunning = true;
+            isGameRunning = true;
             srand((unsigned)time(0));
             StartInputThread();
 
             // Play!
-            while (isRunning)
+            while (isGameRunning)
             {
                 PrintGameState();
                 this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
 
+                UpdatePlayerPosition();
                 UpdateTiles();
 
                 // Check for collisions
@@ -101,12 +109,19 @@ namespace RunButLikeActually
             Player,
             Obstacle
         };
+
         int score = 0;
         int playerSymbolIndex = 0;
         char playerSymbol;
         int lastObstacleDist = INT_MAX;
         array<array<Tile, GAME_TILE_COLS>, GAME_TILE_ROWS> tiles = {};
+
+        float playerYPos = 0;
+        int jumpStepCount = 0;
+
         thread inputThread;
+        atomic<bool> isGameRunning;
+        atomic<bool> isJumping;
 
         void NextPlayerSymbol()
         {
@@ -129,7 +144,7 @@ namespace RunButLikeActually
         void StartInputThread()
         {
             inputThread = thread([this]() {
-                while (isRunning)
+                while (isGameRunning)
                 {
                     if (kbhit())
                     {
@@ -137,9 +152,10 @@ namespace RunButLikeActually
                         switch (key)
                         {
                         case rlutil::KEY_SPACE:
+                            isJumping = true;
                             break;
                         case rlutil::KEY_ESCAPE:
-                            isRunning = false;
+                            isGameRunning = false;
                             break;
                         }
                     }
@@ -164,9 +180,24 @@ namespace RunButLikeActually
                 tiles[i][GAME_TILE_COLS - 1] = Tile::Empty;
             }
 
-            // TODO
-            // The column the player occupies is fixed but the row can change as the player jumps
-            tiles[GAME_TILE_ROWS - 2][GAME_PLAYER_POSITION] = Tile::Player;
+            tiles[GAME_TILE_ROWS - 2 - (int)playerYPos][GAME_PLAYER_POSITION] = Tile::Player;
+        }
+
+        void UpdatePlayerPosition()
+        {
+            if (!isJumping)
+                return;
+
+            int direction = jumpStepCount < PLAYER_JUMP_STEPS ? 1 : -1;
+            playerYPos += PLAYER_JUMP_STEP_SIZE * direction;
+
+            jumpStepCount++;
+
+            if (jumpStepCount == PLAYER_JUMP_DISTANCE - 1)
+            {
+                jumpStepCount = 0;
+                isJumping = false;
+            }
         }
 
         string GetTileString()
@@ -195,6 +226,11 @@ namespace RunButLikeActually
                 }
                 ss << endl;
             }
+
+#if DEBUG
+            ss << "playerYPos: " << playerYPos << endl;
+            ss << "jumpStepCount: " << jumpStepCount << endl;
+#endif
 
             return ss.str();
         }
