@@ -7,6 +7,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <rlutil.h>
 
 using namespace std;
 
@@ -71,12 +72,12 @@ namespace RunButLikeActually
             if (isRunning)
                 throw "We're already running.";
 
+            isRunning = true;
             srand((unsigned)time(0));
-
-            // Setup thread to capture input
+            StartInputThread();
 
             // Play!
-            for (int i = 0; i < 100; i++)
+            while (isRunning)
             {
                 PrintGameState();
                 this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
@@ -88,7 +89,8 @@ namespace RunButLikeActually
                 // Increment score if the player has passed an obstacle
             }
 
-            // Cleanup?
+            // Cleanup
+            StopInputThread();
         }
 
     protected:
@@ -104,6 +106,7 @@ namespace RunButLikeActually
         char playerSymbol;
         int lastObstacleDist = INT_MAX;
         array<array<Tile, GAME_TILE_COLS>, GAME_TILE_ROWS> tiles = {};
+        thread inputThread;
 
         void NextPlayerSymbol()
         {
@@ -121,6 +124,32 @@ namespace RunButLikeActually
         string GetInstructions()
         {
             return string((GAME_TILE_COLS - INSTRUCTIONS.length()) / 2, ' ') + INSTRUCTIONS;
+        }
+
+        void StartInputThread()
+        {
+            inputThread = thread([this]() {
+                while (isRunning)
+                {
+                    if (kbhit())
+                    {
+                        char key = rlutil::getkey();
+                        switch (key)
+                        {
+                        case rlutil::KEY_SPACE:
+                            break;
+                        case rlutil::KEY_ESCAPE:
+                            isRunning = false;
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
+        void StopInputThread()
+        {
+            inputThread.join();
         }
 
         void UpdateTiles()
