@@ -5,6 +5,8 @@
 #include <vector>
 #include <array>
 #include <sstream>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -24,8 +26,8 @@ namespace RunButLikeActually
 #endif
     }
     // Game
-    const int GAME_SPEED = 500;
-    const int GAME_TILE_ROWS = 60;
+    const int GAME_SPEED = 100;
+    const int GAME_TILE_ROWS = 32;
     const int GAME_TILE_COLS = 80;
     const int GAME_INIT_RUNUP_DISTANCE = 64;
     const int GAME_PLAYER_POSITION = 20;
@@ -54,6 +56,7 @@ namespace RunButLikeActually
         Game()
         {
             playerSymbol = PLAYER_SYMBOLS[playerSymbolIndex];
+            tiles[GAME_TILE_ROWS - 2][GAME_PLAYER_POSITION] = Tile::Player;
             tiles[GAME_TILE_ROWS - 1].fill(Tile::Wall);
         }
 
@@ -64,12 +67,19 @@ namespace RunButLikeActually
 
             srand((unsigned)time(0));
 
+            // Setup thread to capture input
+
             // Print game state to start with
             PrintGameState();
 
-            // Setup thread to capture input
+            // Play!
+            for (int i = 0; i < 10; i++)
+            {
+                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
+                PrintGameState();
+            }
 
-            // Cycle through
+            // Cleanup?
         }
 
     protected:
@@ -88,6 +98,7 @@ namespace RunButLikeActually
 
         void NextPlayerSymbol()
         {
+            playerSymbolIndex++;
             if (playerSymbolIndex >= PLAYER_SYMBOLS.size())
                 playerSymbolIndex = 0;
             playerSymbol = PLAYER_SYMBOLS[playerSymbolIndex];
