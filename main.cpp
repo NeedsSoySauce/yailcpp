@@ -12,19 +12,6 @@ using namespace std;
 
 namespace RunButLikeActually
 {
-    // From: https://stackoverflow.com/a/52895729/11628429
-    void ClearConsole()
-    {
-#if defined _WIN32
-        system("cls");
-        //clrscr(); // including header file : conio.h
-#elif defined(__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
-        system("clear");
-        //std::cout<< u8"\033[2J\033[1;1H"; //Using ANSI Escape Sequences
-#elif defined(__APPLE__)
-        system("clear");
-#endif
-    }
     // Game
     const int GAME_SPEED = 100;
     const int GAME_TILE_ROWS = 32;
@@ -49,6 +36,25 @@ namespace RunButLikeActually
     const vector<char> OBSTACLE_SYMBOLS = {'#', '+', '?', '!'};
     const string INSTRUCTIONS = "SPACE TO JUMP. ESC TO QUIT.";
 
+    // From: https://stackoverflow.com/a/52895729/11628429
+    void ClearConsole()
+    {
+#if defined _WIN32
+        system("cls");
+        //clrscr(); // including header file : conio.h
+#elif defined(__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+        system("clear");
+        //std::cout<< u8"\033[2J\033[1;1H"; //Using ANSI Escape Sequences
+#elif defined(__APPLE__)
+        system("clear");
+#endif
+    }
+
+    int RandRange(int min, int max)
+    {
+        return rand() % max + min;
+    }
+
     class Game
     {
     public:
@@ -69,14 +75,17 @@ namespace RunButLikeActually
 
             // Setup thread to capture input
 
-            // Print game state to start with
-            PrintGameState();
-
             // Play!
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 100; i++)
             {
-                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
                 PrintGameState();
+                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
+
+                UpdateTiles();
+
+                // Check for collisions
+
+                // Increment score if the player has passed an obstacle
             }
 
             // Cleanup?
@@ -90,10 +99,10 @@ namespace RunButLikeActually
             Player,
             Obstacle
         };
-
         int score = 0;
         int playerSymbolIndex = 0;
         char playerSymbol;
+        int lastObstacleDist = INT_MAX;
         array<array<Tile, GAME_TILE_COLS>, GAME_TILE_ROWS> tiles = {};
 
         void NextPlayerSymbol()
@@ -106,13 +115,29 @@ namespace RunButLikeActually
 
         char GetRandomObstacleSymbol()
         {
-            int idx = rand() % OBSTACLE_SYMBOLS.size();
-            return OBSTACLE_SYMBOLS[idx];
+            return OBSTACLE_SYMBOLS[RandRange(0, OBSTACLE_SYMBOLS.size())];
         }
 
         string GetInstructions()
         {
             return string((GAME_TILE_COLS - INSTRUCTIONS.length()) / 2, ' ') + INSTRUCTIONS;
+        }
+
+        void UpdateTiles()
+        {
+            // Move all obstacles one column to the left
+            for (int i = 0; i < GAME_TILE_ROWS - 1; i++)
+            {
+                for (int j = 0; j < GAME_TILE_COLS - 1; j++)
+                {
+                    tiles[i][j] = tiles[i][j + 1];
+                }
+                tiles[i][GAME_TILE_COLS - 1] = Tile::Empty;
+            }
+
+            // TODO
+            // The column the player occupies is fixed but the row can change as the player jumps
+            tiles[GAME_TILE_ROWS - 2][GAME_PLAYER_POSITION] = Tile::Player;
         }
 
         string GetTileString()
@@ -150,7 +175,7 @@ namespace RunButLikeActually
             ClearConsole();
             NextPlayerSymbol();
             cout << GetTileString();
-            cout << GetInstructions();
+            cout << GetInstructions() << endl;
         }
     };
 } // namespace RunButLikeActually
