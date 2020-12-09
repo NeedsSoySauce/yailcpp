@@ -155,10 +155,9 @@ namespace RunButLikeActually
     };
 } // namespace RunButLikeActually
 
-using namespace RunButLikeActually;
 int main()
 {
-    Game game;
+    RunButLikeActually::Game game;
     game.Run();
     return 0;
 }
