@@ -1,1 +1,1 @@
-g++ main.cpp -o main -I .
+g++ main.cpp -o main -I . -Wall -Wextra

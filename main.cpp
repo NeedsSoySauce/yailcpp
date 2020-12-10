@@ -1,3 +1,6 @@
+#define NOMINMAX
+#define DEBUG 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctime>
@@ -9,13 +12,19 @@
 #include <thread>
 #include <rlutil.h>
 #include <atomic>
-
-#define DEBUG 0
-
-using namespace std;
+#include <algorithm>
 
 namespace RunButLikeActually
 {
+    using std::array;
+    using std::atomic;
+    using std::cout;
+    using std::endl;
+    using std::string;
+    using std::stringstream;
+    using std::thread;
+    using std::vector;
+
     // Game
     const int GAME_SPEED = 10;
     const int GAME_TILE_ROWS = 32;
@@ -67,7 +76,7 @@ namespace RunButLikeActually
 
     string GetCenteredText(string text, int length)
     {
-        length = max((int)text.length(), length);
+        length = std::max((int)text.length(), length);
         return string((length - text.length()) / 2, ' ') + text;
     }
 
@@ -114,7 +123,7 @@ namespace RunButLikeActually
                 UpdateObstacles();
 
                 // Increment score if the player has passed an obstacle
-                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
+                std::this_thread::sleep_for(std::chrono::milliseconds(GAME_SPEED));
             }
 
             rlutil::showcursor();
@@ -292,7 +301,7 @@ namespace RunButLikeActually
 
         string GetCenteredScore()
         {
-            return GetCenteredText("SCORE: " + to_string(score), GAME_TILE_COLS);
+            return GetCenteredText("SCORE: " + std::to_string(score), GAME_TILE_COLS);
         }
 
         string GetCenteredInstructions()
