@@ -31,7 +31,7 @@ namespace RunButLikeActually
     const int GAME_TILE_COLS = 80;
     const int GAME_PLAYER_POSITION = 20;
 
-    // PlayerHead jump settings. Height and distance should be odd and greater than 3.
+    // Player jump settings. Height and distance should be odd and greater than 3.
     const int PLAYER_JUMP_DISTANCE = 11;
     const int PLAYER_JUMP_HEIGHT = 5;
     const int PLAYER_JUMP_STEPS = PLAYER_JUMP_DISTANCE / 2; // Intentional integer division
@@ -103,7 +103,6 @@ namespace RunButLikeActually
 
             rlutil::hidecursor();
 
-            // Play!
             while (isGameRunning)
             {
                 // The order of the operations in this loop is important.
@@ -122,13 +121,11 @@ namespace RunButLikeActually
                 UpdateTilesAndCheckForCollisions();
                 UpdateObstacles();
 
-                // Increment score if the player has passed an obstacle
                 std::this_thread::sleep_for(std::chrono::milliseconds(GAME_SPEED));
             }
 
             rlutil::showcursor();
 
-            // Cleanup
             StopInputThread();
         }
 
