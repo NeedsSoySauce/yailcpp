@@ -61,6 +61,12 @@ namespace RunButLikeActually
         return rand() % max + min;
     }
 
+    string GetCenteredText(string text, int length)
+    {
+        length = max((int)text.length(), length);
+        return string((length - text.length()) / 2, ' ') + text;
+    }
+
     class Game
     {
     public:
@@ -86,6 +92,9 @@ namespace RunButLikeActually
             // Play!
             while (isGameRunning)
             {
+                // The order of the operations in this loop is important.
+                // The actions taken are designed to be done in a specific order.
+
                 PrintGameState();
 
                 if (isPlayerColliding)
@@ -94,6 +103,7 @@ namespace RunButLikeActually
                     break;
                 }
 
+                UpdateScore();
                 UpdatePlayerPosition();
                 UpdateTilesAndCheckForCollisions();
                 UpdateObstacles();
@@ -140,11 +150,6 @@ namespace RunButLikeActually
         char GetRandomObstacleSymbol()
         {
             return OBSTACLE_SYMBOLS[RandRange(0, OBSTACLE_SYMBOLS.size())];
-        }
-
-        string GetInstructions()
-        {
-            return string((GAME_TILE_COLS - INSTRUCTIONS.length()) / 2, ' ') + INSTRUCTIONS;
         }
 
         void StartInputThread()
@@ -208,6 +213,13 @@ namespace RunButLikeActually
             }
         }
 
+        void UpdateScore()
+        {
+            // The player gets 1 point each time they jump over an obstacle
+            Tile tileBeneathPlayer = tiles[GAME_TILE_ROWS - 2][GAME_PLAYER_POSITION];
+            score += tileBeneathPlayer == Tile::Obstacle;
+        }
+
         bool ObstacleSpawnAvailable()
         {
             if (lastObstacleDist > MAX_OBSTACLE_GAP)
@@ -232,6 +244,16 @@ namespace RunButLikeActually
             {
                 lastObstacleDist++;
             }
+        }
+
+        string GetCenteredScore()
+        {
+            return GetCenteredText("SCORE: " + to_string(score), GAME_TILE_COLS);
+        }
+
+        string GetCenteredInstructions()
+        {
+            return GetCenteredText(INSTRUCTIONS, GAME_TILE_COLS);
         }
 
         string GetTileString()
@@ -262,6 +284,7 @@ namespace RunButLikeActually
             }
 
 #if DEBUG
+            ss << "score: " << score << endl;
             ss << "playerYPos: " << playerYPos << endl;
             ss << "jumpStepCount: " << jumpStepCount << endl;
             ss << "isPlayerColliding: " << isPlayerColliding << endl;
@@ -273,9 +296,10 @@ namespace RunButLikeActually
         void PrintGameState()
         {
             ClearConsole();
+            cout << GetCenteredScore() << endl;
             NextPlayerSymbol();
             cout << GetTileString();
-            cout << GetInstructions() << endl;
+            cout << GetCenteredInstructions() << endl;
         }
     };
 } // namespace RunButLikeActually
