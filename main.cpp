@@ -87,15 +87,19 @@ namespace RunButLikeActually
             while (isGameRunning)
             {
                 PrintGameState();
-                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
+
+                if (isPlayerColliding)
+                {
+                    isGameRunning = false;
+                    break;
+                }
 
                 UpdatePlayerPosition();
-                UpdateTiles();
+                UpdateTilesAndCheckForCollisions();
                 UpdateObstacles();
 
-                // Check for collisions
-
                 // Increment score if the player has passed an obstacle
+                this_thread::sleep_for(chrono::milliseconds(GAME_SPEED));
             }
 
             // Cleanup
@@ -123,6 +127,7 @@ namespace RunButLikeActually
         thread inputThread;
         atomic<bool> isGameRunning;
         atomic<bool> isJumping;
+        bool isPlayerColliding = false;
 
         void NextPlayerSymbol()
         {
@@ -169,7 +174,7 @@ namespace RunButLikeActually
             inputThread.join();
         }
 
-        void UpdateTiles()
+        void UpdateTilesAndCheckForCollisions()
         {
             // Move all obstacles one column to the left
             for (int i = 0; i < GAME_TILE_ROWS - 1; i++)
@@ -181,7 +186,9 @@ namespace RunButLikeActually
                 tiles[i][GAME_TILE_COLS - 1] = Tile::Empty;
             }
 
+            Tile destTile = tiles[GAME_TILE_ROWS - 2 - (int)playerYPos][GAME_PLAYER_POSITION];
             tiles[GAME_TILE_ROWS - 2 - (int)playerYPos][GAME_PLAYER_POSITION] = Tile::Player;
+            isPlayerColliding = destTile == Tile::Obstacle;
         }
 
         void UpdatePlayerPosition()
@@ -257,6 +264,7 @@ namespace RunButLikeActually
 #if DEBUG
             ss << "playerYPos: " << playerYPos << endl;
             ss << "jumpStepCount: " << jumpStepCount << endl;
+            ss << "isPlayerColliding: " << isPlayerColliding << endl;
 #endif
 
             return ss.str();
