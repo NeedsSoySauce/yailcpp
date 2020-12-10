@@ -144,7 +144,7 @@ namespace RunButLikeActually
 
         int score = 0;
         int playerSymbolIndex = 0;
-        int lastObstacleDist = INT_MAX;
+        int lastObstacleDist = MAX_OBSTACLE_GAP + 1;
         array<array<Tile, GAME_TILE_COLS>, GAME_TILE_ROWS> tiles = {};
 
         float playerYPos = 0;
